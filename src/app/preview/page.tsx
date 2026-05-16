@@ -437,19 +437,6 @@ const TOKENS_CSS = `
   flex-direction: column;
   position: relative;
 }
-.phone-frame::before {
-  content: "";
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 4px;
-  background: var(--ink-primary);
-  opacity: 0.15;
-  border-radius: 2px;
-  z-index: 50;
-}
 `;
 
 function FontLink() {

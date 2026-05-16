@@ -37,20 +37,7 @@ const TOKEN_CSS = `
     display: flex;
     flex-direction: column;
   }
-  .phone-frame::before {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 4px;
-    background: var(--ink-primary);
-    opacity: 0.15;
-    border-radius: 2px;
-    z-index: 10;
-  }
-`;
+  `;
 
 // S5 — Departure. A full-screen takeover shown at checkout.
 //   Headline → James's farewell bubble → stamps tally → forward-seed card → CTA.
