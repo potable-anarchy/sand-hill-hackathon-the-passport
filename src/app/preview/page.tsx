@@ -195,7 +195,6 @@ function ItineraryInChat({
     <div style={itineraryCardStyle}>
       <div style={itineraryHeader}>
         <span style={itineraryHeadline}>Your stay, drafted</span>
-        <span style={itineraryHeldFor}>held for the next 48 hours</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {items.map((it) => {

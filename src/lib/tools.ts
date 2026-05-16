@@ -241,19 +241,28 @@ export function deterministicItinerary(prompts: string[]): PassportItem[] {
   const madera = experienceById("madera-tasting");
   if (madera) picks.push({ exp: madera, slot: madera.slots[0] });
 
-  // 5th item — Friday Nights @ Madera Bar when slow + no cultural already
-  // booked, OR Ridge Rosé Reveal otherwise (Sat 5pm).
-  const hasCultural = picks.some((p) =>
-    ["clubhouse-perfumer", "ridge-rose-reveal", "friday-nights-madera"].includes(p.exp.id),
+  // 5th item — Ridge Rosé Reveal (Sat 5pm) by default. Avoid
+  // Friday Nights @ Madera Bar when Madera tasting is already booked
+  // (same venue twice in a 5-slot stay reads redundant).
+  const hasMaderaPick = picks.some((p) =>
+    ["madera-tasting", "madera-bar", "friday-nights-madera"].includes(p.exp.id),
   );
-  if (!hasCultural) {
+  const hasCulturalPick = picks.some((p) =>
+    ["clubhouse-perfumer", "ridge-rose-reveal"].includes(p.exp.id),
+  );
+
+  if (!hasCulturalPick) {
+    // Prefer Ridge Rosé Reveal if Saturday + nothing cultural yet
+    const ridge = experienceById("ridge-rose-reveal");
+    if (ridge) picks.push({ exp: ridge, slot: ridge.slots[0] });
+  } else if (!hasMaderaPick) {
+    // If we already have cultural but no Madera at all, add Friday Nights
     const friday = experienceById("friday-nights-madera");
     if (friday) picks.push({ exp: friday, slot: friday.slots[0] });
   }
 
-  // Build items with alternates for dining slots (so the "also held" line
-  // in the itinerary card stays meaningful).
-  const items: PassportItem[] = picks.map((p, idx) => {
+  // Build items with alternates for dining slots.
+  const built: PassportItem[] = picks.map((p, idx) => {
     const alternates =
       p.exp.category === "dining"
         ? EXPERIENCES.filter(
@@ -271,5 +280,33 @@ export function deterministicItinerary(prompts: string[]): PassportItem[] {
     };
   });
 
-  return items;
+  // Sort chronologically by day (Fri < Sat < Sun) then time-of-day.
+  return built.sort((a, b) => {
+    const pa = parseSlot(a.slot);
+    const pb = parseSlot(b.slot);
+    if (pa.day !== pb.day) return pa.day - pb.day;
+    return pa.minutes - pb.minutes;
+  });
+}
+
+const DAY_ORDER: Record<string, number> = {
+  thu: 0,
+  fri: 1,
+  sat: 2,
+  sun: 3,
+  mon: 4,
+};
+
+function parseSlot(slot: string): { day: number; minutes: number } {
+  const m = slot
+    .toLowerCase()
+    .match(/^(thu|fri|sat|sun|mon)\s+(\d{1,2}):?(\d{2})?\s*(am|pm)?$/);
+  if (!m) return { day: 99, minutes: 9999 };
+  const day = DAY_ORDER[m[1]] ?? 99;
+  let hour = parseInt(m[2], 10);
+  const min = parseInt(m[3] || "0", 10);
+  const ampm = m[4];
+  if (ampm === "pm" && hour !== 12) hour += 12;
+  if (ampm === "am" && hour === 12) hour = 0;
+  return { day, minutes: hour * 60 + min };
 }
