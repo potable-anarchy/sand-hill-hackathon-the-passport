@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getState } from "@/lib/state";
 import { CONCIERGE } from "@/lib/property-catalog";
-import FarewellMessage from "./components/FarewellMessage";
 import ForwardSeedCard from "./components/ForwardSeedCard";
 
 // Inject design tokens locally (globals.css is intentionally untouched for the
@@ -63,9 +62,6 @@ export default function DeparturePage() {
   const stampsBanked = state.stampsBanked;
   const guestName = state.guest.name;
 
-  const farewellText =
-    "You found the morning light. We missed the wine tasting — we're saving you a seat for next time.";
-
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: TOKEN_CSS }} />
@@ -109,15 +105,10 @@ export default function DeparturePage() {
               Until next time
             </h1>
 
-            {/* James's farewell bubble */}
-            <div style={{ marginTop: 32 }}>
-              <FarewellMessage text={farewellText} />
-            </div>
-
             {/* Stamps tally */}
             <div
               className="flex flex-col items-center"
-              style={{ marginTop: 24, marginBottom: 24, gap: 6 }}
+              style={{ marginTop: 48, marginBottom: 32, gap: 6 }}
             >
               <div
                 style={{
