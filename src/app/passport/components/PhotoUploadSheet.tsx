@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { experienceById } from "@/lib/property-catalog";
 import type { PassportItem } from "@/lib/types";
+
+const DEMO_PHOTO_URL = "/demo/marcie-hackathon.jpg";
 
 type Props = {
   open: boolean;
@@ -13,31 +15,24 @@ type Props = {
 
 export function PhotoUploadSheet(props: Props) {
   if (!props.open) return null;
-  // Body is mounted only while open so its internal state resets on each open.
   return <PhotoUploadSheetBody {...props} />;
 }
 
 function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
-  const [preview, setPreview] = useState<string | null>(null);
+  // Demo mock: the photo is "already there" as soon as the sheet opens —
+  // simulating what the user would have just taken / selected. No file
+  // picker; tap the photo zone to reveal, tap Save to attach.
+  const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const exp = targetItem ? experienceById(targetItem.experienceId) : null;
-  const title = exp ? `${exp.name} · post a photo` : "Save a memory";
-
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
-  }
+  const title = exp ? `${exp.name} · capture your experience` : "Save a memory";
 
   async function handlePost() {
-    if (!targetItem || !preview) return;
+    if (!targetItem || !revealed) return;
     setSubmitting(true);
     try {
-      await onSubmit({ itemId: targetItem.id, photoUrl: preview });
+      await onSubmit({ itemId: targetItem.id, photoUrl: DEMO_PHOTO_URL });
     } finally {
       setSubmitting(false);
     }
@@ -76,20 +71,22 @@ function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setRevealed(true)}
+          aria-label={revealed ? "Photo selected" : "Tap to add a photo"}
           className="block w-full overflow-hidden rounded-[6px]"
           style={{
             aspectRatio: "4 / 5",
-            background: preview
+            background: revealed
               ? "transparent"
               : "linear-gradient(135deg, #1F1E1A 0%, #4A3C2D 100%)",
+            cursor: revealed ? "default" : "pointer",
           }}
         >
-          {preview ? (
+          {revealed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={preview}
-              alt="preview"
+              src={DEMO_PHOTO_URL}
+              alt="your photo"
               className="h-full w-full object-cover"
             />
           ) : (
@@ -101,13 +98,6 @@ function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
             </div>
           )}
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFile}
-          className="hidden"
-        />
 
         <div
           className="mt-6 text-[13px] leading-snug"
@@ -120,7 +110,7 @@ function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
 
         <button
           type="button"
-          disabled={!preview || submitting}
+          disabled={!revealed || submitting}
           onClick={handlePost}
           className="mt-6 w-full rounded-[2px] py-4 text-[14px] font-medium tracking-wide disabled:opacity-40"
           style={{

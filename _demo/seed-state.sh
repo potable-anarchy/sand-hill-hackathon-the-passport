@@ -31,25 +31,10 @@ curl -s -X POST "$BASE/api/observation" \
   -d '{"text":"Marcie mentioned her sister'\''s wedding in Sonoma next May.","staffMember":"Front Desk"}' \
   > /dev/null
 
-# Pre-attach the demo sunset photo to the first photo-eligible held item.
-# This way the email at /timeline and the "What you loved" panel at
-# /preview/welcome-back both have a real photo from the get-go — and the
-# same photo flows all the way through.
-say "Attaching demo sunset photo to the first photo-eligible item…"
-FIRST_ITEM_ID=$(curl -s "$BASE/api/state" \
-  | (command -v jq >/dev/null 2>&1 \
-      && jq -r '.items[0].id' \
-      || node -e "let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{const j=JSON.parse(d); console.log(j.items[0]?.id||'')})"))
-
-if [ -n "$FIRST_ITEM_ID" ]; then
-  curl -s -X POST "$BASE/api/redeem" \
-    -H "content-type: application/json" \
-    -d "{\"itemId\":\"$FIRST_ITEM_ID\",\"outcome\":\"stamped\",\"photoUrl\":\"/demo/marcie-hackathon.jpg\"}" \
-    > /dev/null
-  say "  • photo attached to $FIRST_ITEM_ID"
-fi
-
 say ""
 say "✓ State ready."
+say "  The photo is NOT pre-attached — tap 'Capture your experience' on the"
+say "  first item to mock the upload. The Marcie photo will pre-load as the"
+say "  preview; tap 'Save to Passport' to attach it."
 say "  Live demo:    open $BASE/preview  (← will re-do intake — only for full live demo)"
 say "  Video record: open $BASE/passport (starts at the itinerary, skip intake)"
