@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getState } from "@/lib/state";
 import { CONCIERGE } from "@/lib/property-catalog";
 import ForwardSeedCard from "./components/ForwardSeedCard";
+import DemoNav from "@/components/DemoNav";
 
 // Inject design tokens locally (globals.css is intentionally untouched for the
 // hackathon scaffold). Mirrors the preview route's approach so the Departure
@@ -162,6 +163,7 @@ export default function DeparturePage() {
             </div>
           </div>
         </div>
+        <DemoNav />
       </main>
     </>
   );

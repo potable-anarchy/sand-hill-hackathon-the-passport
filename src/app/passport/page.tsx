@@ -2,6 +2,7 @@ import { getState } from "@/lib/state";
 import { TopBar } from "./components/TopBar";
 import { TabNav } from "./components/TabNav";
 import { PassportItineraryView } from "./components/PassportItineraryView";
+import DemoNav from "@/components/DemoNav";
 
 // Inject design tokens locally (globals.css is intentionally untouched for the
 // hackathon scaffold). Mirrors the Departure route's approach so the Itinerary
@@ -84,6 +85,7 @@ export default function PassportPage() {
           <PassportItineraryView initialState={state} />
           <TabNav />
         </div>
+        <DemoNav />
       </main>
     </>
   );

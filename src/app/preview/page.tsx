@@ -6,6 +6,7 @@ import { experienceById } from "@/lib/property-catalog";
 import type { PassportItem, ChatMessage as ChatMessageType } from "@/lib/types";
 import ChatMessage from "../passport/concierge/components/ChatMessage";
 import ChatInput from "../passport/concierge/components/ChatInput";
+import DemoNav from "@/components/DemoNav";
 
 const Q1 = "Welcome to Sand Hill. Tell me — what would feel like a perfect day here?";
 const Q2 = "And anything we should plan around — work, jet lag, anything specific?";
@@ -178,6 +179,7 @@ export default function PreviewPage() {
           />
         )}
       </div>
+      <DemoNav />
     </div>
   );
 }

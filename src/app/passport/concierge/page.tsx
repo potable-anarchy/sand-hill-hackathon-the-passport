@@ -6,6 +6,7 @@ import { CONCIERGE } from "@/lib/property-catalog";
 import ChatMessage from "./components/ChatMessage";
 import ChatInput from "./components/ChatInput";
 import { TabNav } from "../components/TabNav";
+import DemoNav from "@/components/DemoNav";
 
 type ConciergeResponse = {
   reply: string;
@@ -170,6 +171,7 @@ export default function ConciergePage() {
 
       <ChatInput onSend={handleSend} disabled={sending} />
       <TabNav />
+      <DemoNav />
     </div>
   );
 }

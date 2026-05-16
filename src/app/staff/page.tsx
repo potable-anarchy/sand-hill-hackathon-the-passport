@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { PassportState, PassportItem, StaffObservation } from "@/lib/types";
 import { experienceById, CONCIERGE } from "@/lib/property-catalog";
+import DemoNav from "@/components/DemoNav";
 
 type FeedRow = {
   id: string;
@@ -249,6 +250,7 @@ export default function StaffPage() {
           </div>
         </div>
       </div>
+      <DemoNav />
     </div>
   );
 }

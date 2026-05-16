@@ -3,6 +3,7 @@ import { getState } from "@/lib/state";
 import { CONCIERGE, experienceById, EXPERIENCES } from "@/lib/property-catalog";
 import type { StaffObservation } from "@/lib/types";
 import WelcomeBackBanner from "./components/WelcomeBackBanner";
+import DemoNav from "@/components/DemoNav";
 
 const FALLBACK_CALLBACK = (concierge: string) =>
   `${concierge} remembered your sister's wedding in Sonoma — Hong Kong has a quiet terrace for the rehearsal dinner if you'd like.`;
@@ -137,6 +138,7 @@ export default function WelcomeBackPage() {
             <div style={ctaCaption}>James will hold whatever you choose.</div>
           </div>
         </div>
+        <DemoNav />
       </main>
     </>
   );

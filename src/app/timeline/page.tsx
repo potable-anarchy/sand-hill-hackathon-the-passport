@@ -1,5 +1,6 @@
 import { getState } from "@/lib/state";
 import { experienceById, EXPERIENCES } from "@/lib/property-catalog";
+import DemoNav from "@/components/DemoNav";
 
 /**
  * Post-checkout email drafts.
@@ -105,6 +106,7 @@ export default function EmailDraftsPage() {
             </p>
           </div>
         </div>
+        <DemoNav />
       </main>
     </>
   );
