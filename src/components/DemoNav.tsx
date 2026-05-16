@@ -65,26 +65,6 @@ export default function DemoNav() {
           <span style={chevronStyle}>→</span>
         </Link>
       )}
-      <div style={indicatorStyle}>
-        <div style={dotsStyle}>
-          {STEPS.map((s, i) => (
-            <span
-              key={s.path}
-              style={{
-                ...dotStyle,
-                background:
-                  i === idx
-                    ? "rgba(31, 30, 26, 0.8)"
-                    : "rgba(31, 30, 26, 0.2)",
-                width: i === idx ? 18 : 6,
-              }}
-            />
-          ))}
-        </div>
-        <div style={stepTextStyle}>
-          {idx + 1} of {STEPS.length} · {STEPS[idx].label} · ← → to navigate
-        </div>
-      </div>
       <style
         dangerouslySetInnerHTML={{
           __html: `
