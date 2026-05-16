@@ -34,7 +34,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Chef's seasonal California tasting menu",
     slots: ["Fri 6:30pm", "Sat 6:30pm", "Sat 7:30pm", "Sun 6:30pm"],
     durationMinutes: 150,
-    unlock: "Sommelier visit after the third course",
+    unlock: "Sommelier walkthrough after the third course + chef's amuse to take home",
     photoRedemptionAppropriate: true,
   },
   {
@@ -45,7 +45,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Craft cocktails and a refreshed bar menu",
     slots: ["Fri 5:00pm", "Fri 9:00pm", "Sat 5:00pm", "Sat 9:00pm"],
     durationMinutes: 90,
-    unlock: "Bartender's off-menu pour",
+    unlock: "House Old Fashioned built with the chef's seasonal bitters",
     photoRedemptionAppropriate: true,
   },
   {
@@ -56,7 +56,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Live jazz or DJs spinning vinyl",
     slots: ["Fri 9:00pm"],
     durationMinutes: 120,
-    unlock: "Reserved corner booth with view of the band",
+    unlock: "Reserved corner booth + bottle of the artist's favorite zero-proof",
     photoRedemptionAppropriate: true,
   },
   {
@@ -67,7 +67,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Curated Flamingo Estate teas, savory bites, house-made pastries",
     slots: ["Fri 3:00pm", "Sat 3:00pm", "Sun 3:00pm"],
     durationMinutes: 90,
-    unlock: "Take-home tin of the tea you most enjoyed",
+    unlock: "Take-home tin of the Flamingo Estate tea you loved most",
     photoRedemptionAppropriate: true,
   },
   {
@@ -78,7 +78,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Thoughtfully sourced beans, hyper-seasonal ingredients, fresh pastries",
     slots: ["Sat 7:00am", "Sat 8:00am", "Sun 7:00am", "Sun 8:00am"],
     durationMinutes: 30,
-    unlock: "Pastry of the day, on the house",
+    unlock: "Today's almond croissant + a second espresso, on us",
     photoRedemptionAppropriate: true,
   },
   {
@@ -89,7 +89,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Curated personalized treatment from the Asaya team",
     slots: ["Sat 11:00am", "Sat 2:00pm", "Sat 4:00pm", "Sun 10:00am"],
     durationMinutes: 90,
-    unlock: "10-minute add-on, therapist's choice",
+    unlock: "Hot stones added to your treatment",
     photoRedemptionAppropriate: false,
   },
   {
@@ -100,7 +100,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Heated pool surrounded by cypress",
     slots: ["Sat 8:00am", "Sat 9:00am", "Sun 8:00am", "Sun 9:00am"],
     durationMinutes: 60,
-    unlock: "Cold-pressed juice at the cabana",
+    unlock: "Cold-pressed green juice + cucumber towel service",
     photoRedemptionAppropriate: true,
   },
   {
@@ -111,7 +111,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Guided ride through Bay Area hills with a Sand Hill cyclist",
     slots: ["Sat 7:30am", "Sun 7:30am"],
     durationMinutes: 120,
-    unlock: "Recovery espresso at Bici Coffee",
+    unlock: "Recovery espresso + warm chocolate brioche at Bici",
     photoRedemptionAppropriate: true,
   },
   {
@@ -122,7 +122,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Unveiling of this year's vintage from Ridge Vineyards",
     slots: ["Sat 5:00pm"],
     durationMinutes: 90,
-    unlock: "Signed bottle from the Ridge producer",
+    unlock: "Signed magnum from the Ridge winemaker",
     photoRedemptionAppropriate: true,
   },
   {
@@ -133,7 +133,7 @@ export const EXPERIENCES: Experience[] = [
     description: "Intimate chat with perfumer Kori Shaw",
     slots: ["Sat 4:00pm"],
     durationMinutes: 60,
-    unlock: "Bespoke fragrance sample to take home",
+    unlock: "Bespoke fragrance vial blended for you on the spot",
     photoRedemptionAppropriate: true,
   },
 ];

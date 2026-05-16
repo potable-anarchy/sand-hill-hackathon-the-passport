@@ -1,20 +1,55 @@
-import { Cormorant_Garamond, Inter } from "next/font/google";
 import { getState } from "@/lib/state";
 import { TopBar } from "./components/TopBar";
 import { TabNav } from "./components/TabNav";
 import { PassportItineraryView } from "./components/PassportItineraryView";
 
-const serif = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-serif",
-});
-
-const sans = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-sans",
-});
+// Inject design tokens locally (globals.css is intentionally untouched for the
+// hackathon scaffold). Mirrors the Departure route's approach so the Itinerary
+// flow renders with the same cream surface, serif headlines, and phone-frame
+// chrome as the rest of the demo.
+const TOKEN_CSS = `
+  :root {
+    --bg-cream: #FAF7F2;
+    --surface-paper: #FCFAF6;
+    --surface-white: #FFFFFF;
+    --ink-primary: #1F1E1A;
+    --ink-secondary: #5C5953;
+    --ink-tertiary: #8E8A82;
+    --accent-olive: #7F8E6F;
+    --accent-brass: #A88A56;
+    --accent-clay: #B07A6B;
+    --divider: #E8E4DC;
+    --sage-olive: #7F8E6F;
+    --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+    --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  .phone-frame {
+    width: 390px;
+    max-width: 100%;
+    height: 844px;
+    max-height: 100vh;
+    background: var(--bg-cream);
+    border: 1px solid var(--ink-tertiary);
+    border-radius: 36px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-frame::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 4px;
+    background: var(--ink-primary);
+    opacity: 0.15;
+    border-radius: 2px;
+    z-index: 10;
+  }
+`;
 
 export const dynamic = "force-dynamic";
 
@@ -22,52 +57,34 @@ export default function PassportPage() {
   const state = getState();
 
   return (
-    <div
-      className={`${serif.variable} ${sans.variable} flex min-h-screen flex-1 items-center justify-center p-6`}
-      style={{
-        background: "var(--color-divider, #E8E4DC)",
-        fontFamily: "var(--font-sans, 'Inter', system-ui, sans-serif)",
-        // Surface design tokens locally so styles work even before globals.css
-        // is updated by the design-system agent.
-        ["--color-bg-cream" as string]: "#FAF7F2",
-        ["--color-surface-paper" as string]: "#FCFAF6",
-        ["--color-surface-white" as string]: "#FFFFFF",
-        ["--color-ink-primary" as string]: "#1F1E1A",
-        ["--color-ink-secondary" as string]: "#5C5953",
-        ["--color-ink-tertiary" as string]: "#8E8A82",
-        ["--color-accent-olive" as string]: "#7F8E6F",
-        ["--color-accent-brass" as string]: "#A88A56",
-        ["--color-accent-clay" as string]: "#B07A6B",
-        ["--color-divider" as string]: "#E8E4DC",
-      }}
-    >
-      <div
-        className="phone-frame relative flex flex-col overflow-hidden"
+    <>
+      <style dangerouslySetInnerHTML={{ __html: TOKEN_CSS }} />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="anonymous"
+      />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+
+      <main
+        className="flex min-h-screen w-full flex-1 items-center justify-center p-6"
         style={{
-          width: "390px",
-          height: "844px",
-          background: "var(--color-bg-cream, #FAF7F2)",
-          border: "1px solid var(--color-ink-tertiary, #8E8A82)",
-          borderRadius: "36px",
+          background: "#E8E4DC",
+          fontFamily: "var(--font-sans, 'Inter', system-ui, sans-serif)",
+          color: "var(--ink-primary, #1F1E1A)",
         }}
+        aria-label="Passport itinerary"
       >
-        <span
-          aria-hidden
-          className="absolute left-1/2 -translate-x-1/2"
-          style={{
-            top: "8px",
-            width: "120px",
-            height: "4px",
-            background: "var(--color-ink-primary, #1F1E1A)",
-            opacity: 0.15,
-            borderRadius: "2px",
-            zIndex: 10,
-          }}
-        />
-        <TopBar stampsEarned={state.stampsEarned} />
-        <PassportItineraryView initialState={state} />
-        <TabNav />
-      </div>
-    </div>
+        <div className="phone-frame">
+          <TopBar stampsEarned={state.stampsEarned} />
+          <PassportItineraryView initialState={state} />
+          <TabNav />
+        </div>
+      </main>
+    </>
   );
 }

@@ -28,8 +28,8 @@ export function StampConfirmation({
       <div
         className="w-full rounded-[12px] border p-8"
         style={{
-          background: "var(--color-surface-white, #FFFFFF)",
-          borderColor: "var(--color-divider, #E8E4DC)",
+          background: "var(--surface-white, #FFFFFF)",
+          borderColor: "var(--divider, #E8E4DC)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -39,7 +39,7 @@ export function StampConfirmation({
             onClick={onClose}
             aria-label="Close"
             className="text-[16px]"
-            style={{ color: "var(--color-ink-tertiary, #8E8A82)" }}
+            style={{ color: "var(--ink-tertiary, #8E8A82)" }}
           >
             ✕
           </button>
@@ -51,7 +51,7 @@ export function StampConfirmation({
             style={{
               fontFamily:
                 "var(--font-serif, 'Cormorant Garamond', Georgia, serif)",
-              color: "var(--color-accent-olive, #7F8E6F)",
+              color: "var(--accent-olive, #7F8E6F)",
               fontWeight: 400,
               letterSpacing: "-0.01em",
             }}
@@ -62,7 +62,7 @@ export function StampConfirmation({
           {(experienceName || slot) && (
             <div
               className="mt-3 text-[14px]"
-              style={{ color: "var(--color-ink-secondary, #5C5953)" }}
+              style={{ color: "var(--ink-secondary, #5C5953)" }}
             >
               {[experienceName, slot].filter(Boolean).join(" · ")}
             </div>
@@ -71,7 +71,7 @@ export function StampConfirmation({
           {unlock && (
             <div
               className="mx-auto mt-4 max-w-[260px] text-[14px] leading-relaxed"
-              style={{ color: "var(--color-ink-primary, #1F1E1A)" }}
+              style={{ color: "var(--ink-primary, #1F1E1A)" }}
             >
               {unlock}
             </div>
@@ -81,7 +81,7 @@ export function StampConfirmation({
             <div
               className="mt-5 text-[13px] font-medium"
               style={{
-                color: "var(--color-accent-brass, #A88A56)",
+                color: "var(--accent-brass, #A88A56)",
                 letterSpacing: "0.02em",
               }}
             >
@@ -95,8 +95,8 @@ export function StampConfirmation({
           onClick={onClose}
           className="mt-8 w-full rounded-[2px] py-3 text-[14px] font-medium tracking-wide"
           style={{
-            background: "var(--color-ink-primary, #1F1E1A)",
-            color: "var(--color-bg-cream, #FAF7F2)",
+            background: "var(--ink-primary, #1F1E1A)",
+            color: "var(--bg-cream, #FAF7F2)",
           }}
         >
           Close

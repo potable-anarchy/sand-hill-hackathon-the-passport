@@ -91,21 +91,18 @@ export function PassportItineraryView({ initialState }: Props) {
     setPhotoSheetOpen(false);
   }
 
-  // Stable visual order: held/unlocked first (chronological), then stamped, then banked
-  const sortedItems = [...state.items];
-
   return (
-    <div className="relative flex flex-1 flex-col">
+    <div className="relative flex flex-1 flex-col overflow-hidden">
       <div
         className="flex-1 overflow-y-auto px-6 py-6"
-        style={{ background: "var(--color-bg-cream, #FAF7F2)" }}
+        style={{ background: "var(--bg-cream, #FAF7F2)" }}
       >
         <h1
           className="text-[32px] leading-tight"
           style={{
             fontFamily:
               "var(--font-serif, 'Cormorant Garamond', Georgia, serif)",
-            color: "var(--color-ink-primary, #1F1E1A)",
+            color: "var(--ink-primary, #1F1E1A)",
             fontWeight: 400,
             letterSpacing: "-0.01em",
           }}
@@ -114,25 +111,25 @@ export function PassportItineraryView({ initialState }: Props) {
         </h1>
         <p
           className="mb-6 text-[13px]"
-          style={{ color: "var(--color-ink-secondary, #5C5953)" }}
+          style={{ color: "var(--ink-secondary, #5C5953)" }}
         >
           Fri — Sun · Sand Hill
         </p>
 
-        {sortedItems.length === 0 && (
+        {state.items.length === 0 && (
           <div
             className="rounded-[12px] border p-8 text-center text-[13px]"
             style={{
-              background: "var(--color-surface-white, #FFFFFF)",
-              borderColor: "var(--color-divider, #E8E4DC)",
-              color: "var(--color-ink-secondary, #5C5953)",
+              background: "var(--surface-white, #FFFFFF)",
+              borderColor: "var(--divider, #E8E4DC)",
+              color: "var(--ink-secondary, #5C5953)",
             }}
           >
             No experiences yet. James will hold a few once your stay begins.
           </div>
         )}
 
-        {sortedItems.map((item) => (
+        {state.items.map((item) => (
           <PassportCard
             key={item.id}
             item={item}

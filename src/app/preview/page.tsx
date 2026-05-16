@@ -1,231 +1,388 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import PreviewIntake from "./components/PreviewIntake";
-import PreviewItinerary from "./components/PreviewItinerary";
-import type { PassportItem, GuestProfile } from "@/lib/types";
+import { experienceById } from "@/lib/property-catalog";
+import type { PassportItem, ChatMessage as ChatMessageType } from "@/lib/types";
+import ChatMessage from "../passport/concierge/components/ChatMessage";
+import ChatInput from "../passport/concierge/components/ChatInput";
 
-type Step = 1 | 2 | 3 | "loading" | "itinerary";
+const Q1 = "Welcome to Sand Hill. Tell me — what would feel like a perfect day here?";
+const Q2 = "And anything we should plan around — work, jet lag, anything specific?";
+const Q3 = "Last one: anything you'd rather we leave off?";
 
-const QUESTIONS: Array<{ question: string; placeholder: string }> = [
-  {
-    question: "What would feel like a perfect day at Rosewood Sand Hill?",
-    placeholder:
-      "A slow morning, somewhere in the cypress grove, an unhurried dinner.",
-  },
-  {
-    question: "Anything we should plan around?",
-    placeholder:
-      "Arriving Friday afternoon, friend joining us Saturday for dinner.",
-  },
-  {
-    question: "Anything you'd rather not?",
-    placeholder: "Nothing too early. No big group activities.",
-  },
-];
+const QUESTIONS = [Q1, Q2, Q3];
 
-/**
- * Passport Preview flow.
- * 3 sequential intake prompts → POST to /api/itinerary/generate → render itinerary.
- * CTA on itinerary navigates to /passport (the post-booking home).
- *
- * Design tokens are injected inline because globals.css is intentionally untouched.
- */
+type Stage = "asking" | "generating" | "presented";
+
 export default function PreviewPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>(1);
-  const [answers, setAnswers] = useState<[string, string, string]>(["", "", ""]);
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [stage, setStage] = useState<Stage>("asking");
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [items, setItems] = useState<PassportItem[]>([]);
-  const [, setGuest] = useState<GuestProfile | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const streamRef = useRef<HTMLDivElement | null>(null);
 
-  const setAnswer = (idx: 0 | 1 | 2, v: string) =>
-    setAnswers((prev) => {
-      const next = [...prev] as [string, string, string];
-      next[idx] = v;
-      return next;
-    });
+  // Open with James's first question.
+  useEffect(() => {
+    setMessages([
+      {
+        id: "intake-q-0",
+        role: "concierge",
+        text: Q1,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  }, []);
 
-  async function generate() {
-    setStep("loading");
-    setError(null);
-    try {
-      const res = await fetch("/api/itinerary/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompts: answers }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { items: PassportItem[]; guest: GuestProfile };
-      setItems(data.items);
-      setGuest(data.guest);
-      setStep("itinerary");
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : "Something went wrong");
-      setStep(3);
+  // Auto-scroll to bottom on new content
+  useEffect(() => {
+    if (streamRef.current) {
+      streamRef.current.scrollTop = streamRef.current.scrollHeight;
     }
-  }
+  }, [messages, items]);
+
+  const handleSend = async (text: string) => {
+    if (stage !== "asking") return;
+
+    const guestMsg: ChatMessageType = {
+      id: `intake-a-${step}`,
+      role: "guest",
+      text,
+      timestamp: new Date().toISOString(),
+    };
+    const nextAnswers = [...answers, text];
+    setMessages((prev) => [...prev, guestMsg]);
+    setAnswers(nextAnswers);
+
+    const nextStep = step + 1;
+
+    if (nextStep < QUESTIONS.length) {
+      await sleep(450);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `intake-q-${nextStep}`,
+          role: "concierge",
+          text: QUESTIONS[nextStep],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      setStep(nextStep);
+    } else {
+      setStage("generating");
+      await sleep(400);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: "intake-drafting",
+          role: "concierge",
+          text: "One moment — drafting your stay.",
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      try {
+        const res = await fetch("/api/itinerary/generate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ prompts: nextAnswers, guestName: "Marcie" }),
+        });
+        const data = (await res.json()) as { items: PassportItem[] };
+        setItems(data.items);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: "intake-presented",
+            role: "concierge",
+            text: "Here's what I'd hold for you. Anything to swap before you book?",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        setStage("presented");
+      } catch (err) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: "intake-error",
+            role: "concierge",
+            text: "Hm — give me a moment, I'm having trouble reaching the catalog.",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        setStage("asking");
+      }
+    }
+  };
 
   return (
-    <>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        :root {
-          --bg-cream: #faf7f2;
-          --surface-paper: #fcfaf6;
-          --surface-white: #ffffff;
-          --ink-primary: #1f1e1a;
-          --ink-secondary: #5c5953;
-          --ink-tertiary: #8e8a82;
-          --accent-olive: #7f8e6f;
-          --accent-brass: #a88a56;
-          --accent-clay: #b07a6b;
-          --divider: #e8e4dc;
-          --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-          --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-        }
-        .phone-frame {
-          width: 390px;
-          max-width: 100%;
-          height: 844px;
-          max-height: calc(100vh - 32px);
-          background: var(--bg-cream);
-          border: 1px solid var(--ink-tertiary);
-          border-radius: 36px;
-          overflow: hidden;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          font-family: var(--font-sans);
-          color: var(--ink-primary);
-        }
-        .phone-frame::before {
-          content: "";
-          position: absolute;
-          top: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 120px;
-          height: 4px;
-          background: var(--ink-primary);
-          opacity: 0.15;
-          border-radius: 2px;
-          z-index: 10;
-        }
-        textarea::placeholder, input::placeholder {
-          color: var(--ink-tertiary);
-          opacity: 1;
-        }
-      `,
-        }}
-      />
+    <div style={pageStyle}>
+      <FontLink />
+      <Tokens />
+      <div className="phone-frame">
+        <div style={topbarStyle}>
+          <span style={wordmarkStyle}>the passport</span>
+        </div>
 
-      {/* Google Fonts for the serif + sans */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossOrigin="anonymous"
-      />
-      <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap"
-        rel="stylesheet"
-      />
+        <div style={chatHeaderStyle}>
+          <h2 style={chatHeaderName}>James</h2>
+          <div style={chatHeaderRole}>YOUR SAND HILL CONCIERGE</div>
+        </div>
 
-      <main
-        className="min-h-screen w-full flex items-center justify-center p-8"
-        style={{ background: "#e8e4dc" }}
-      >
-        <div className="phone-frame">
-          {step === 1 && (
-            <PreviewIntake
-              step={1}
-              total={3}
-              question={QUESTIONS[0].question}
-              placeholder={QUESTIONS[0].placeholder}
-              value={answers[0]}
-              onChange={(v) => setAnswer(0, v)}
-              onNext={() => setStep(2)}
-              disabled={!answers[0].trim()}
-            />
-          )}
+        <div ref={streamRef} style={streamStyle}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {messages.map((m) => (
+              <ChatMessage key={m.id} message={m} />
+            ))}
+            {stage === "presented" && items.length > 0 && (
+              <ItineraryInChat items={items} onBook={() => router.push("/passport")} />
+            )}
+          </div>
+        </div>
 
-          {step === 2 && (
-            <PreviewIntake
-              step={2}
-              total={3}
-              question={QUESTIONS[1].question}
-              placeholder={QUESTIONS[1].placeholder}
-              value={answers[1]}
-              onChange={(v) => setAnswer(1, v)}
-              onNext={() => setStep(3)}
-              onBack={() => setStep(1)}
-              disabled={!answers[1].trim()}
-            />
-          )}
+        {stage !== "presented" && (
+          <ChatInput onSend={handleSend} disabled={stage === "generating"} />
+        )}
+      </div>
+    </div>
+  );
+}
 
-          {step === 3 && (
-            <>
-              <PreviewIntake
-                step={3}
-                total={3}
-                question={QUESTIONS[2].question}
-                placeholder={QUESTIONS[2].placeholder}
-                value={answers[2]}
-                onChange={(v) => setAnswer(2, v)}
-                onNext={generate}
-                onBack={() => setStep(2)}
-                nextLabel="Generate →"
-                disabled={!answers[2].trim()}
-              />
-              {error && (
-                <div
-                  className="absolute bottom-6 left-6 right-6 text-[12px] px-4 py-3 rounded"
-                  style={{
-                    background: "rgba(176, 122, 107, 0.1)",
-                    border: "1px solid var(--accent-clay)",
-                    color: "var(--accent-clay)",
-                  }}
-                >
-                  Couldn&apos;t draft your stay: {error}. Tap Generate to retry.
+function ItineraryInChat({
+  items,
+  onBook,
+}: {
+  items: PassportItem[];
+  onBook: () => void;
+}) {
+  return (
+    <div style={itineraryCardStyle}>
+      <div style={itineraryHeader}>
+        <span style={itineraryHeadline}>Your stay, drafted</span>
+        <span style={itineraryHeldFor}>held for the next 48 hours</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {items.map((it) => {
+          const exp = experienceById(it.experienceId);
+          if (!exp) return null;
+          return (
+            <div key={it.id} style={itineraryItemStyle}>
+              <div style={itinerarySlot}>{it.slot.toUpperCase()}</div>
+              <div style={itineraryName}>{exp.name}</div>
+              <div style={itineraryDesc}>{exp.description}</div>
+              <div style={unlockPill}>◇ {exp.unlock}</div>
+              {it.alternates.length > 0 && (
+                <div style={alternatesLine}>
+                  Also held:{" "}
+                  {it.alternates
+                    .map((aid) => experienceById(aid)?.name)
+                    .filter(Boolean)
+                    .join(", ")}
                 </div>
               )}
-            </>
-          )}
-
-          {step === "loading" && (
-            <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-              <div
-                className="text-[24px] mb-3"
-                style={{
-                  fontFamily: "var(--font-serif)",
-                  fontWeight: 400,
-                  color: "var(--ink-primary)",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                Drafting your stay
-              </div>
-              <div
-                className="text-[12px] uppercase tracking-[0.12em]"
-                style={{ color: "var(--ink-tertiary)" }}
-              >
-                holding a few things for you
-              </div>
             </div>
-          )}
+          );
+        })}
+      </div>
+      <button onClick={onBook} style={bookButtonStyle}>
+        Add dates and book →
+      </button>
+    </div>
+  );
+}
 
-          {step === "itinerary" && (
-            <PreviewItinerary
-              items={items}
-              onCommit={() => router.push("/passport")}
-            />
-          )}
-        </div>
-      </main>
-    </>
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+// ─── Styles ────────────────────────────────────────────────────────────────
+
+const pageStyle: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "var(--bg-cream, #FAF7F2)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 24,
+};
+
+const topbarStyle: React.CSSProperties = {
+  padding: "32px 24px 16px",
+  borderBottom: "1px solid var(--divider, #E8E4DC)",
+};
+
+const wordmarkStyle: React.CSSProperties = {
+  fontFamily: "var(--font-serif)",
+  fontSize: 18,
+  color: "var(--ink-primary, #1F1E1A)",
+};
+
+const chatHeaderStyle: React.CSSProperties = {
+  padding: "16px 24px 12px",
+  borderBottom: "1px solid var(--divider, #E8E4DC)",
+};
+
+const chatHeaderName: React.CSSProperties = {
+  fontFamily: "var(--font-serif)",
+  fontSize: 22,
+  color: "var(--ink-primary, #1F1E1A)",
+  margin: 0,
+};
+
+const chatHeaderRole: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.08em",
+  color: "var(--ink-tertiary, #8E8A82)",
+  marginTop: 2,
+  textTransform: "uppercase",
+};
+
+const streamStyle: React.CSSProperties = {
+  flex: 1,
+  overflowY: "auto",
+  padding: "16px 20px",
+};
+
+const itineraryCardStyle: React.CSSProperties = {
+  background: "var(--surface-white, #ffffff)",
+  border: "1px solid var(--divider, #E8E4DC)",
+  borderRadius: 12,
+  padding: 20,
+  marginTop: 4,
+};
+
+const itineraryHeader: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  marginBottom: 16,
+  paddingBottom: 12,
+  borderBottom: "1px solid var(--divider, #E8E4DC)",
+};
+
+const itineraryHeadline: React.CSSProperties = {
+  fontFamily: "var(--font-serif)",
+  fontSize: 20,
+  color: "var(--ink-primary, #1F1E1A)",
+};
+
+const itineraryHeldFor: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.08em",
+  color: "var(--ink-tertiary, #8E8A82)",
+  textTransform: "uppercase",
+  marginTop: 4,
+};
+
+const itineraryItemStyle: React.CSSProperties = {
+  paddingBottom: 12,
+  borderBottom: "1px solid var(--divider, #E8E4DC)",
+};
+
+const itinerarySlot: React.CSSProperties = {
+  fontSize: 10,
+  letterSpacing: "0.08em",
+  color: "var(--ink-tertiary, #8E8A82)",
+  marginBottom: 4,
+};
+
+const itineraryName: React.CSSProperties = {
+  fontFamily: "var(--font-serif)",
+  fontSize: 17,
+  color: "var(--ink-primary, #1F1E1A)",
+  marginBottom: 4,
+};
+
+const itineraryDesc: React.CSSProperties = {
+  fontSize: 13,
+  color: "var(--ink-secondary, #5C5953)",
+  marginBottom: 8,
+};
+
+const unlockPill: React.CSSProperties = {
+  display: "inline-block",
+  background: "rgba(127, 142, 111, 0.12)",
+  color: "var(--sage-olive, #7F8E6F)",
+  fontSize: 12,
+  padding: "3px 10px",
+  borderRadius: 100,
+  letterSpacing: "0.02em",
+};
+
+const alternatesLine: React.CSSProperties = {
+  fontSize: 11,
+  color: "var(--ink-tertiary, #8E8A82)",
+  marginTop: 8,
+  fontStyle: "italic",
+};
+
+const bookButtonStyle: React.CSSProperties = {
+  width: "100%",
+  marginTop: 20,
+  padding: "14px",
+  background: "var(--ink-primary, #1F1E1A)",
+  color: "var(--bg-cream, #FAF7F2)",
+  border: "none",
+  borderRadius: 2,
+  fontSize: 14,
+  fontWeight: 500,
+  letterSpacing: "0.02em",
+  cursor: "pointer",
+  fontFamily: "var(--font-sans)",
+};
+
+function Tokens() {
+  return <style dangerouslySetInnerHTML={{ __html: TOKENS_CSS }} />;
+}
+
+const TOKENS_CSS = `
+:root {
+  --bg-cream: #FAF7F2;
+  --surface-paper: #FCFAF6;
+  --surface-white: #FFFFFF;
+  --ink-primary: #1F1E1A;
+  --ink-secondary: #5C5953;
+  --ink-tertiary: #8E8A82;
+  --sage-olive: #7F8E6F;
+  --sage-olive-tint: rgba(127, 142, 111, 0.1);
+  --sage-olive-border: rgba(127, 142, 111, 0.25);
+  --accent-brass: #A88A56;
+  --accent-clay: #B07A6B;
+  --divider: #E8E4DC;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", -apple-system, system-ui, sans-serif;
+}
+.phone-frame {
+  width: 390px;
+  height: 844px;
+  background: var(--bg-cream);
+  border: 1px solid var(--ink-tertiary);
+  border-radius: 36px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.phone-frame::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  background: var(--ink-primary);
+  opacity: 0.15;
+  border-radius: 2px;
+  z-index: 50;
+}
+`;
+
+function FontLink() {
+  return (
+    // eslint-disable-next-line @next/next/no-page-custom-font
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap"
+    />
   );
 }
