@@ -22,18 +22,31 @@ export default function PreviewPage() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [items, setItems] = useState<PassportItem[]>([]);
+  const [typing, setTyping] = useState(false);
   const streamRef = useRef<HTMLDivElement | null>(null);
 
-  // Open with James's first question.
+  // Open with James's first question (after a brief beat so user sees the screen first).
   useEffect(() => {
-    setMessages([
-      {
-        id: "intake-q-0",
-        role: "concierge",
-        text: Q1,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    let mounted = true;
+    (async () => {
+      await sleep(500);
+      if (!mounted) return;
+      setTyping(true);
+      await sleep(900);
+      if (!mounted) return;
+      setTyping(false);
+      setMessages([
+        {
+          id: "intake-q-0",
+          role: "concierge",
+          text: Q1,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Auto-scroll to bottom on new content
@@ -41,7 +54,28 @@ export default function PreviewPage() {
     if (streamRef.current) {
       streamRef.current.scrollTop = streamRef.current.scrollHeight;
     }
-  }, [messages, items]);
+  }, [messages, items, typing]);
+
+  // Helper: show typing indicator for a beat, then append a James message.
+  const sayAfterTyping = async (
+    id: string,
+    text: string,
+    typingMs = 1000,
+  ) => {
+    setTyping(true);
+    await sleep(typingMs);
+    setTyping(false);
+    await sleep(80);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id,
+        role: "concierge",
+        text,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  };
 
   const handleSend = async (text: string) => {
     if (stage !== "asking") return;
@@ -59,29 +93,25 @@ export default function PreviewPage() {
     const nextStep = step + 1;
 
     if (nextStep < QUESTIONS.length) {
-      await sleep(450);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `intake-q-${nextStep}`,
-          role: "concierge",
-          text: QUESTIONS[nextStep],
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      // Pause so user's own message has a beat to land, then James "types" the next question.
+      await sleep(600);
+      await sayAfterTyping(`intake-q-${nextStep}`, QUESTIONS[nextStep], 1100);
       setStep(nextStep);
     } else {
+      // All 3 answered — drafting + present.
       setStage("generating");
-      await sleep(400);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: "intake-drafting",
-          role: "concierge",
-          text: "One moment — drafting your stay.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      await sleep(700);
+      await sayAfterTyping(
+        "intake-drafting",
+        "One moment — drafting your stay.",
+        900,
+      );
+
+      // Hold the drafting message + run the API call in parallel.
+      const minDraftingDisplayMs = 2200;
+      const start = Date.now();
+      let items: PassportItem[] = [];
+      let didError = false;
       try {
         const res = await fetch("/api/itinerary/generate", {
           method: "POST",
@@ -89,29 +119,34 @@ export default function PreviewPage() {
           body: JSON.stringify({ prompts: nextAnswers, guestName: "Marcie" }),
         });
         const data = (await res.json()) as { items: PassportItem[] };
-        setItems(data.items);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: "intake-presented",
-            role: "concierge",
-            text: "Here's what I'd hold for you. Anything to swap before you book?",
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        setStage("presented");
-      } catch (err) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: "intake-error",
-            role: "concierge",
-            text: "Hm — give me a moment, I'm having trouble reaching the catalog.",
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        setStage("asking");
+        items = data.items;
+      } catch {
+        didError = true;
       }
+      const elapsed = Date.now() - start;
+      if (elapsed < minDraftingDisplayMs) {
+        await sleep(minDraftingDisplayMs - elapsed);
+      }
+
+      if (didError) {
+        await sayAfterTyping(
+          "intake-error",
+          "Hm — give me a moment, I'm having trouble reaching the catalog.",
+          800,
+        );
+        setStage("asking");
+        return;
+      }
+
+      setItems(items);
+      await sayAfterTyping(
+        "intake-presented",
+        "Here's what I'd hold for you. Anything to swap before you book?",
+        1100,
+      );
+      // Brief pause so the message lands before the itinerary card appears.
+      await sleep(500);
+      setStage("presented");
     }
   };
 
@@ -134,6 +169,7 @@ export default function PreviewPage() {
             {messages.map((m) => (
               <ChatMessage key={m.id} message={m} />
             ))}
+            {typing && <TypingBubble />}
             {stage === "presented" && items.length > 0 && (
               <ItineraryInChat items={items} onBook={() => router.push("/passport")} />
             )}
@@ -141,7 +177,10 @@ export default function PreviewPage() {
         </div>
 
         {stage !== "presented" && (
-          <ChatInput onSend={handleSend} disabled={stage === "generating"} />
+          <ChatInput
+            onSend={handleSend}
+            disabled={stage === "generating" || typing || messages.length === 0}
+          />
         )}
       </div>
     </div>
@@ -193,6 +232,56 @@ function ItineraryInChat({
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function TypingBubble() {
+  return (
+    <div className="w-full flex flex-col items-start">
+      <div
+        style={{
+          background: "var(--sage-olive-tint, rgba(127, 142, 111, 0.1))",
+          border: "1px solid var(--sage-olive-border, rgba(127, 142, 111, 0.25))",
+          borderRadius: "16px 16px 16px 4px",
+          padding: "14px 18px",
+          color: "var(--ink-tertiary, #8E8A82)",
+          fontFamily: "var(--font-sans)",
+          fontSize: 18,
+          letterSpacing: 4,
+          lineHeight: 1,
+          display: "inline-flex",
+          gap: 0,
+        }}
+      >
+        <Dot delay="0s" />
+        <Dot delay="0.18s" />
+        <Dot delay="0.36s" />
+      </div>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+@keyframes pulseDot {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 2px;
+  border-radius: 50%;
+  background: var(--ink-tertiary, #8E8A82);
+  animation: pulseDot 1.2s ease-in-out infinite;
+  opacity: 0.25;
+}
+`,
+        }}
+      />
+    </div>
+  );
+}
+
+function Dot({ delay }: { delay: string }) {
+  return <span className="typing-dot" style={{ animationDelay: delay }} />;
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────
