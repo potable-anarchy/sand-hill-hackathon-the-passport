@@ -102,11 +102,36 @@ export async function conciergeReply(
     return mockConciergeReply(guestMessage);
   }
 
-  const systemPrompt = `You are ${CONCIERGE.name}, the Sand Hill concierge at Rosewood Sand Hill in Menlo Park. Your tone: ${CONCIERGE.tone}.
+  // Snapshot the passport so Claude can resolve "my Madera dinner" → itemId
+  // without having to ask the guest. Without this context, Claude has no
+  // way to know which itemId to pass to update_passport.
+  const state = getState();
+  const passportLines = state.items.length
+    ? state.items
+        .map((it) => {
+          const exp = experienceById(it.experienceId);
+          return `- itemId="${it.id}" — ${exp?.name ?? it.experienceId} @ ${it.slot} · state=${it.state}${
+            it.alternates.length
+              ? ` · alternates=[${it.alternates.join(", ")}]`
+              : ""
+          }`;
+        })
+        .join("\n")
+    : "(no items held yet)";
+  const guestName = state.guest.name;
 
-You have access to the property catalog and can modify the guest's passport using the available tools. When the guest asks you to do something (move an experience, ask about availability, swap restaurants), use the tools to actually do it — don't just describe what you would do.
+  const systemPrompt = `You are ${CONCIERGE.name}, the Sand Hill concierge at Rosewood Sand Hill in Menlo Park.
 
-Be brief. Specific. Never markety. Match the editorial tone of a Rosewood property.`;
+Your tone: ${CONCIERGE.tone}.
+
+The guest you are talking to right now is ${guestName}. Their current passport:
+${passportLines}
+
+When the guest references an item by name (e.g. "my Madera dinner", "the hike", "my spa"), look up the matching itemId from the list above and call update_passport with that exact itemId — never ask the guest for an ID. Never ask which item they mean unless the list above is empty or genuinely ambiguous.
+
+Use the tools to actually do things — don't describe what you would do. If they ask to move, call update_passport with action="move" or "swap". If they ask about availability, call query_availability. If they ask what's open or what's good, you already see their passport above and the experience catalog via get_property_info.
+
+Be brief. Specific. Never markety. One or two sentences usually. Match the editorial tone of a Rosewood property — never use words like "amazing", "perfect", "wonderful", "definitely". Sound like a real person who knows the property and the guest's stay.`;
 
   const messages: Anthropic.MessageParam[] = [
     ...conversationHistory.map((m) => ({ role: m.role, content: m.content })),
