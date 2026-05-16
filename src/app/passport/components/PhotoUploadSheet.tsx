@@ -111,16 +111,12 @@ function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
         />
 
         <div
-          className="mt-6 text-[13px] leading-7"
+          className="mt-6 text-[13px] leading-snug"
           style={{ color: "var(--ink-secondary, #5C5953)" }}
         >
-          This photo:
-          <br />
-          ◇ Confirms your tasting
-          <br />
-          ◇ Saves to your Passport Album
-          <br />
-          {exp?.unlock ? `◇ Earns: ${exp.unlock}` : "◇ Earns your unlock"}
+          {exp?.unlock
+            ? `Save to your Passport — unlocks ${lowerFirst(exp.unlock)}.`
+            : "Save to your Passport to earn your unlock."}
         </div>
 
         <label
@@ -159,9 +155,14 @@ function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
             color: "var(--bg-cream, #FAF7F2)",
           }}
         >
-          {submitting ? "Posting…" : "Post"}
+          {submitting ? "Saving…" : "Save to Passport"}
         </button>
       </div>
     </div>
   );
+}
+
+function lowerFirst(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toLowerCase() + s.slice(1);
 }
