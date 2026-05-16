@@ -1,0 +1,169 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import type { PassportItem, PassportState } from "@/lib/types";
+import { experienceById } from "@/lib/property-catalog";
+import { PassportCard } from "./PassportCard";
+import { PhotoAlbumCard } from "./PhotoAlbumCard";
+import { PhotoUploadSheet } from "./PhotoUploadSheet";
+import { StampConfirmation } from "./StampConfirmation";
+
+type Props = {
+  initialState: PassportState;
+};
+
+type ConfirmInfo = {
+  experienceName?: string;
+  slot?: string;
+  unlock?: string;
+  stampsEarned?: number;
+};
+
+export function PassportItineraryView({ initialState }: Props) {
+  const [state, setState] = useState<PassportState>(initialState);
+  const [busyItemId, setBusyItemId] = useState<string | null>(null);
+  const [photoSheetOpen, setPhotoSheetOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmInfo, setConfirmInfo] = useState<ConfirmInfo | null>(null);
+
+  const refresh = useCallback(async () => {
+    const res = await fetch("/api/state", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = (await res.json()) as PassportState;
+    setState(data);
+  }, []);
+
+  // Pull fresh state on focus, in case staff feed / other actors mutated it
+  useEffect(() => {
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refresh]);
+
+  // Pick the first held + photo-redemption-appropriate item for the album card
+  const photoTarget: PassportItem | null =
+    state.items.find((i) => {
+      const exp = experienceById(i.experienceId);
+      return i.state === "held" && exp?.photoRedemptionAppropriate;
+    }) ?? null;
+
+  async function redeem(item: PassportItem, photoUrl?: string) {
+    setBusyItemId(item.id);
+    try {
+      const res = await fetch("/api/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemId: item.id,
+          outcome: "stamped",
+          ...(photoUrl ? { photoUrl } : {}),
+        }),
+      });
+      const result = (await res.json()) as {
+        ok: boolean;
+        unlock?: string;
+        stampsEarned?: number;
+      };
+      const exp = experienceById(item.experienceId);
+      setConfirmInfo({
+        experienceName: exp?.name,
+        slot: item.slot,
+        unlock: result.unlock ?? exp?.unlock,
+        stampsEarned: result.stampsEarned,
+      });
+      setConfirmOpen(true);
+      await refresh();
+    } finally {
+      setBusyItemId(null);
+    }
+  }
+
+  async function handlePhotoSubmit({
+    itemId,
+    photoUrl,
+  }: {
+    itemId: string;
+    photoUrl: string;
+  }) {
+    const target = state.items.find((i) => i.id === itemId);
+    if (!target) return;
+    await redeem(target, photoUrl);
+    setPhotoSheetOpen(false);
+  }
+
+  // Stable visual order: held/unlocked first (chronological), then stamped, then banked
+  const sortedItems = [...state.items];
+
+  return (
+    <div className="relative flex flex-1 flex-col">
+      <div
+        className="flex-1 overflow-y-auto px-6 py-6"
+        style={{ background: "var(--color-bg-cream, #FAF7F2)" }}
+      >
+        <h1
+          className="text-[32px] leading-tight"
+          style={{
+            fontFamily:
+              "var(--font-serif, 'Cormorant Garamond', Georgia, serif)",
+            color: "var(--color-ink-primary, #1F1E1A)",
+            fontWeight: 400,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Your Passport
+        </h1>
+        <p
+          className="mb-6 text-[13px]"
+          style={{ color: "var(--color-ink-secondary, #5C5953)" }}
+        >
+          Fri — Sun · Sand Hill
+        </p>
+
+        {sortedItems.length === 0 && (
+          <div
+            className="rounded-[12px] border p-8 text-center text-[13px]"
+            style={{
+              background: "var(--color-surface-white, #FFFFFF)",
+              borderColor: "var(--color-divider, #E8E4DC)",
+              color: "var(--color-ink-secondary, #5C5953)",
+            }}
+          >
+            No experiences yet. James will hold a few once your stay begins.
+          </div>
+        )}
+
+        {sortedItems.map((item) => (
+          <PassportCard
+            key={item.id}
+            item={item}
+            onRedeem={(i) => redeem(i)}
+            busy={busyItemId === item.id}
+          />
+        ))}
+
+        {photoTarget && (
+          <PhotoAlbumCard
+            onClick={() => setPhotoSheetOpen(true)}
+            disabled={busyItemId !== null}
+          />
+        )}
+      </div>
+
+      <PhotoUploadSheet
+        open={photoSheetOpen}
+        targetItem={photoTarget}
+        onClose={() => setPhotoSheetOpen(false)}
+        onSubmit={handlePhotoSubmit}
+      />
+
+      <StampConfirmation
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        experienceName={confirmInfo?.experienceName}
+        slot={confirmInfo?.slot}
+        unlock={confirmInfo?.unlock}
+        stampsEarned={confirmInfo?.stampsEarned}
+      />
+    </div>
+  );
+}
