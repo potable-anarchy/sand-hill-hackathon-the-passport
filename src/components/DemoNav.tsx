@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -25,9 +25,26 @@ const STEPS = [
 export default function DemoNav() {
   const router = useRouter();
   const path = usePathname();
+  const [resetting, setResetting] = useState(false);
   const idx = STEPS.findIndex((s) => s.path === path);
   const prev = idx > 0 ? STEPS[idx - 1] : null;
   const next = idx >= 0 && idx < STEPS.length - 1 ? STEPS[idx + 1] : null;
+
+  const startNewDemo = async () => {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      await fetch("/api/demo/reset", { method: "POST" });
+      // Land on /preview to start the demo from the top.
+      router.push("/preview");
+      // Force a refresh so any cached server-component data re-fetches.
+      setTimeout(() => router.refresh(), 150);
+    } catch (e) {
+      console.error("Demo reset failed", e);
+    } finally {
+      setTimeout(() => setResetting(false), 800);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -53,6 +70,17 @@ export default function DemoNav() {
 
   return (
     <>
+      <button
+        type="button"
+        onClick={startNewDemo}
+        disabled={resetting}
+        className="demo-nav-btn"
+        style={startStyle}
+        aria-label="Start a new demo"
+      >
+        <span style={chevronStyle}>↻</span>
+        <span style={labelStyle}>{resetting ? "Resetting…" : "Start new demo"}</span>
+      </button>
       {prev && (
         <Link href={prev.path} style={prevStyle} className="demo-nav-btn">
           <span style={chevronStyle}>←</span>
@@ -111,6 +139,17 @@ const prevStyle: React.CSSProperties = {
 const nextStyle: React.CSSProperties = {
   ...btnBase,
   right: 24,
+};
+
+// "Start new demo" — sits above the right pill nav, top-right of the screen.
+const startStyle: React.CSSProperties = {
+  ...btnBase,
+  top: 24,
+  right: 24,
+  transform: "none",
+  background: "rgba(168, 138, 86, 0.85)", // brass accent
+  border: "1px solid rgba(168, 138, 86, 0.55)",
+  cursor: "pointer",
 };
 
 const chevronStyle: React.CSSProperties = {
