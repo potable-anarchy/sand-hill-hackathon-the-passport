@@ -19,7 +19,6 @@ export function PhotoUploadSheet(props: Props) {
 
 function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
   const [preview, setPreview] = useState<string | null>(null);
-  const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,32 +117,6 @@ function PhotoUploadSheetBody({ targetItem, onClose, onSubmit }: Props) {
             ? `Save to your Passport — unlocks ${lowerFirst(exp.unlock)}.`
             : "Save to your Passport to earn your unlock."}
         </div>
-
-        <label
-          className="mt-6 flex cursor-pointer items-start gap-3 rounded-[6px] border px-4 py-3 text-[13px]"
-          style={{
-            background: "var(--surface-paper, #FCFAF6)",
-            borderColor: "var(--divider, #E8E4DC)",
-            color: "var(--ink-primary, #1F1E1A)",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            className="mt-[3px]"
-          />
-          <span>
-            Includes people I know
-            <br />
-            <span
-              className="text-[11px]"
-              style={{ color: "var(--ink-tertiary, #8E8A82)" }}
-            >
-              encrypted to your account
-            </span>
-          </span>
-        </label>
 
         <button
           type="button"
