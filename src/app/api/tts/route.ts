@@ -14,10 +14,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { createHash } from "node:crypto";
 
-// Default to "Adam" — a warm, slightly low masculine voice that reads
-// as the kind of person you'd want as your Sand Hill concierge.
+// Default to "George" — middle-aged British, "Warm, Captivating Storyteller".
+// Reads as the kind of person you'd actually want as your Sand Hill concierge.
 const DEFAULT_VOICE_ID =
-  process.env.ELEVENLABS_VOICE_ID || "pNInz6obpgDQGcFmaJgB";
+  process.env.ELEVENLABS_VOICE_ID || "JBFqnCBsd6RMkjVDRZzb";
 const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
 
 declare global {
