@@ -44,7 +44,7 @@ FIRST_ITEM_ID=$(curl -s "$BASE/api/state" \
 if [ -n "$FIRST_ITEM_ID" ]; then
   curl -s -X POST "$BASE/api/redeem" \
     -H "content-type: application/json" \
-    -d "{\"itemId\":\"$FIRST_ITEM_ID\",\"outcome\":\"stamped\",\"photoUrl\":\"/demo/sand-hill-sunset.svg\"}" \
+    -d "{\"itemId\":\"$FIRST_ITEM_ID\",\"outcome\":\"stamped\",\"photoUrl\":\"/demo/marcie-hackathon.jpg\"}" \
     > /dev/null
   say "  • photo attached to $FIRST_ITEM_ID"
 fi
