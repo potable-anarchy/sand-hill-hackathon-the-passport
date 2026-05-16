@@ -159,6 +159,7 @@ function handleUpdatePassport(input: Record<string, unknown>): unknown {
 function handleRedeemExperience(input: Record<string, unknown>): unknown {
   const itemId = input.itemId as string;
   const outcome = input.outcome as StampState;
+  const photoUrl = input.photoUrl as string | undefined;
 
   const state = setState((s) => {
     const item = s.items.find((i) => i.id === itemId);
@@ -167,6 +168,15 @@ function handleRedeemExperience(input: Record<string, unknown>): unknown {
       item.redeemedAt = new Date().toISOString();
       if (outcome === "stamped") s.stampsEarned += 1;
       else if (outcome === "banked") s.stampsBanked += 1;
+      if (photoUrl) {
+        item.photoUrl = photoUrl;
+        s.photos.push({
+          id: `photo-${Date.now()}`,
+          url: photoUrl,
+          itemId,
+          uploadedAt: new Date().toISOString(),
+        });
+      }
     }
   });
 

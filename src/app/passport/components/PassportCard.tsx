@@ -75,6 +75,20 @@ export function PassportCard({ item, onRedeem, busy }: Props) {
         {exp.location}
       </div>
 
+      {isStamped && item.photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.photoUrl}
+          alt={exp.name}
+          className="mt-3 block w-full rounded-[6px]"
+          style={{
+            aspectRatio: "4 / 3",
+            objectFit: "cover",
+            border: "1px solid var(--divider, #E8E4DC)",
+          }}
+        />
+      ) : null}
+
       <div className="mt-3">
         <span
           className="inline-block rounded-full px-3 py-1 text-[12px]"

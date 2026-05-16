@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
   const result = handleToolCall("redeem_experience", {
     itemId: body.itemId,
     outcome: body.outcome,
+    ...(body.photoUrl ? { photoUrl: body.photoUrl } : {}),
   });
   return NextResponse.json(result);
 }
