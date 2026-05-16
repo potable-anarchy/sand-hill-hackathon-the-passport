@@ -139,13 +139,8 @@ export default function PreviewPage() {
       }
 
       setItems(items);
-      await sayAfterTyping(
-        "intake-presented",
-        "Here's what I'd hold for you. Anything to swap before you book?",
-        1100,
-      );
-      // Brief pause so the message lands before the itinerary card appears.
-      await sleep(500);
+      // Brief pause after drafting, then the itinerary card appears.
+      await sleep(300);
       setStage("presented");
     }
   };
