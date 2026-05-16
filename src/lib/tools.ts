@@ -187,22 +187,27 @@ function handleRedeemExperience(input: Record<string, unknown>): unknown {
 /**
  * Builds an initial passport from 3 prompt answers using keyword matching.
  * Used as fallback when MOCK_MODE=true or Claude is unavailable.
+ *
+ * Targets 4–5 items so the demo always feels like a proper luxury stay:
+ *   morning · midday · afternoon · evening · (sometimes a cultural extra)
  */
 export function deterministicItinerary(prompts: string[]): PassportItem[] {
   const text = prompts.join(" ").toLowerCase();
   const picks: { exp: Experience; slot: string }[] = [];
 
-  // Heuristic: pick a morning, an afternoon, an evening, plus 1-2 extras
-  const pickFrom = (cat: Experience["category"], slot: string) => {
-    const candidates = EXPERIENCES.filter(
-      (e) => e.category === cat && !picks.some((p) => p.exp.id === e.id),
-    );
-    if (candidates.length === 0) return null;
-    return candidates[0];
-  };
+  // Strip "no X" / "not X" / "without X" phrases so they don't trigger
+  // the keyword they negate.
+  const cleaned = text
+    .replace(/\b(no|not|without|skip|avoid|don'?t want)\s+\w+/g, " ")
+    .trim();
 
-  // Morning: coffee or cycling or pool
-  if (text.match(/morning|sunrise|early|active|ride|cycling/)) {
+  // Tone signals — these gate active vs slow tracks
+  const wantsActive = /active|ride|cycling|workout|run|hike|energet|push|adventure/.test(cleaned);
+  const wantsWellness = /spa|massage|wellness|recovery|tired|sore|stress|unwind|relax/.test(cleaned);
+  const wantsCulture = /wine|ridge|vineyard|perfume|scent|art|library|culture|story|jazz/.test(cleaned);
+
+  // Morning — active wins over default. Bici coffee otherwise.
+  if (wantsActive) {
     const cycling = experienceById("cycling-concierge");
     if (cycling) picks.push({ exp: cycling, slot: cycling.slots[0] });
   } else {
@@ -210,8 +215,8 @@ export function deterministicItinerary(prompts: string[]): PassportItem[] {
     if (bici) picks.push({ exp: bici, slot: bici.slots[0] });
   }
 
-  // Wellness: spa or pool
-  if (text.match(/slow|relax|unwind|spa|recovery|wellness/)) {
+  // Midday — wellness lean. Spa if wellness signaled, pool otherwise.
+  if (wantsWellness) {
     const spa = experienceById("asaya-spa");
     if (spa) picks.push({ exp: spa, slot: spa.slots[0] });
   } else {
@@ -219,26 +224,43 @@ export function deterministicItinerary(prompts: string[]): PassportItem[] {
     if (pool) picks.push({ exp: pool, slot: pool.slots[0] });
   }
 
-  // Cultural/entertainment
-  if (text.match(/wine|ridge|vineyard|tasting/)) {
-    const ridge = experienceById("ridge-rose-reveal");
-    if (ridge) picks.push({ exp: ridge, slot: ridge.slots[0] });
-  } else if (text.match(/perfume|scent|art|library/)) {
+  // Afternoon — always pick something. Cultural lean if signaled,
+  // afternoon tea otherwise.
+  if (wantsCulture && /perfume|scent|art|library/.test(text)) {
     const perfumer = experienceById("clubhouse-perfumer");
     if (perfumer) picks.push({ exp: perfumer, slot: perfumer.slots[0] });
+  } else if (wantsCulture && /wine|ridge|vineyard/.test(text)) {
+    const ridge = experienceById("ridge-rose-reveal");
+    if (ridge) picks.push({ exp: ridge, slot: ridge.slots[0] });
+  } else {
+    const tea = experienceById("afternoon-tea-flamingo");
+    if (tea) picks.push({ exp: tea, slot: tea.slots[0] });
   }
 
-  // Evening: dinner always
+  // Evening — dinner always.
   const madera = experienceById("madera-tasting");
   if (madera) picks.push({ exp: madera, slot: madera.slots[0] });
 
-  // Build items with alternates for the dining slot
+  // 5th item — Friday Nights @ Madera Bar when slow + no cultural already
+  // booked, OR Ridge Rosé Reveal otherwise (Sat 5pm).
+  const hasCultural = picks.some((p) =>
+    ["clubhouse-perfumer", "ridge-rose-reveal", "friday-nights-madera"].includes(p.exp.id),
+  );
+  if (!hasCultural) {
+    const friday = experienceById("friday-nights-madera");
+    if (friday) picks.push({ exp: friday, slot: friday.slots[0] });
+  }
+
+  // Build items with alternates for dining slots (so the "also held" line
+  // in the itinerary card stays meaningful).
   const items: PassportItem[] = picks.map((p, idx) => {
     const alternates =
       p.exp.category === "dining"
         ? EXPERIENCES.filter(
             (e) => e.category === "dining" && e.id !== p.exp.id,
-          ).slice(0, 2).map((e) => e.id)
+          )
+            .slice(0, 2)
+            .map((e) => e.id)
         : [];
     return {
       id: `item-${idx}-${p.exp.id}`,

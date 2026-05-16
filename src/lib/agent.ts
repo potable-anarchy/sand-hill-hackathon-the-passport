@@ -7,7 +7,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { TOOL_SCHEMAS, handleToolCall, deterministicItinerary } from "./tools";
 import type { PassportItem } from "./types";
-import { CONCIERGE, EXPERIENCES } from "./property-catalog";
+import { CONCIERGE, EXPERIENCES, experienceById } from "./property-catalog";
+import { getState, setState } from "./state";
 
 const MOCK = process.env.MOCK_MODE === "true" || !process.env.ANTHROPIC_API_KEY;
 
@@ -152,43 +153,182 @@ Be brief. Specific. Never markety. Match the editorial tone of a Rosewood proper
 
 // ─── Mock concierge fallback ────────────────────────────────────────────────
 
+/**
+ * Smarter mock concierge that:
+ *  - actually mutates state when the guest asks for a move/swap/redemption
+ *  - references items that exist in the current passport (no fabricated "hike"
+ *    when the guest only has cycling)
+ *  - doesn't promise state changes it can't deliver
+ */
 function mockConciergeReply(guestMessage: string): ConciergeReply {
+  const state = getState();
   const msg = guestMessage.toLowerCase();
+  const items = state.items;
 
-  if (msg.match(/move|change|swap.*hike|reschedule/)) {
+  // Helper: find a held item whose experience matches a hint word.
+  const findHeld = (hints: string[]) =>
+    items.find((it) => {
+      if (it.state !== "held" && it.state !== "unlocked") return false;
+      const exp = experienceById(it.experienceId);
+      if (!exp) return false;
+      const blob = (exp.name + " " + exp.category + " " + exp.id).toLowerCase();
+      return hints.some((h) => blob.includes(h));
+    });
+
+  // ── Intent: move / reschedule a specific experience ────────────────────
+  if (msg.match(/move|reschedule|push|swap.*time|earlier|later/)) {
+    // Try to figure out which one. Pull the first held item that matches
+    // a keyword in the guest's message, falling back to the next held item.
+    const hintMatch =
+      findHeld(["cycling", "ride"]) && msg.match(/cycl|ride/i)
+        ? findHeld(["cycling", "ride"])
+        : findHeld(["spa", "asaya"]) && msg.match(/spa|asaya|massage/i)
+          ? findHeld(["spa", "asaya"])
+          : findHeld(["coffee", "bici"]) && msg.match(/coffee|bici|breakfast/i)
+            ? findHeld(["coffee", "bici"])
+            : findHeld(["tasting", "madera", "dinner"]) &&
+                msg.match(/dinner|tasting|madera/i)
+              ? findHeld(["tasting", "madera", "dinner"])
+              : items.find((i) => i.state === "held");
+
+    if (!hintMatch) {
+      return {
+        text: "Your passport is light right now — nothing to move yet.",
+        stateChanged: false,
+      };
+    }
+    const exp = experienceById(hintMatch.experienceId);
+    if (!exp) return { text: "Hmm — one moment.", stateChanged: false };
+
+    // Pick a different slot from the experience's available list, or shift
+    // the current slot label slightly so the demo shows a visible change.
+    const otherSlot =
+      exp.slots.find((s) => s !== hintMatch.slot) ||
+      shiftedSlot(hintMatch.slot);
+
+    setState((s) => {
+      const t = s.items.find((i) => i.id === hintMatch.id);
+      if (t) t.slot = otherSlot;
+    });
+
     return {
-      text: "Done. Spa at 5, hike at 7 tomorrow morning.",
+      text: `Done. ${exp.name} moved to ${otherSlot}.`,
       stateChanged: true,
     };
   }
-  if (msg.match(/dinner|hungry|tired|tonight/)) {
+
+  // ── Intent: cancel / drop / remove an experience ──────────────────────
+  if (msg.match(/cancel|drop|remove|don't want|nevermind|skip/)) {
+    const target = items.find((i) => i.state === "held");
+    if (!target) {
+      return {
+        text: "Nothing held that I can drop. Your passport is clear.",
+        stateChanged: false,
+      };
+    }
+    const exp = experienceById(target.experienceId);
+    setState((s) => {
+      s.items = s.items.filter((i) => i.id !== target.id);
+    });
     return {
-      text: "Madera's tasting is the move tonight — I can hold a quieter corner if you'd like. The bar is open later if you'd rather keep it lighter.",
-      stateChanged: false,
-    };
-  }
-  if (msg.match(/wine|pair|sommelier/)) {
-    return {
-      text: "Sofia at Madera has the Ridge pairing tonight. I'll let her know you're coming so she can walk you through it after the third course.",
-      stateChanged: false,
-    };
-  }
-  if (msg.match(/yes|sure|ok|please|sounds good/)) {
-    return {
-      text: "Done.",
+      text: `Done. ${exp?.name ?? "That one"} is off the passport.`,
       stateChanged: true,
     };
   }
-  if (msg.match(/spa|massage|asaya/)) {
+
+  // ── Intent: dinner / hungry — prefer dinner-y experiences, not tea ──────
+  if (msg.match(/dinner|hungry|tonight|eat|food|hangry/)) {
+    const dinnerPriorityIds = [
+      "madera-tasting",
+      "madera-bar",
+      "friday-nights-madera",
+    ];
+    const dinner =
+      items.find(
+        (i) =>
+          dinnerPriorityIds.includes(i.experienceId) &&
+          (i.state === "held" || i.state === "unlocked"),
+      ) ||
+      items.find((i) => {
+        const exp = experienceById(i.experienceId);
+        return (
+          exp?.category === "dining" &&
+          (i.state === "held" || i.state === "unlocked")
+        );
+      });
+    if (dinner) {
+      const exp = experienceById(dinner.experienceId)!;
+      return {
+        text: `${exp.name} is on the passport for ${dinner.slot}. I can hold a quieter corner if you'd like, or pull you toward the bar instead.`,
+        stateChanged: false,
+      };
+    }
     return {
-      text: "Asaya has openings at 11, 2, and 4 tomorrow. The 4pm tends to be the quietest — therapist's choice on the 10-minute add-on.",
+      text: "Nothing dining on the passport yet — want me to hold the Madera tasting Friday at 6:30?",
       stateChanged: false,
     };
   }
+
+  // ── Intent: wine / pairing / sommelier ─────────────────────────────────
+  if (msg.match(/wine|pair|sommelier|ridge/)) {
+    const tasting = items.find(
+      (i) => i.experienceId === "madera-tasting" || i.experienceId === "madera-bar",
+    );
+    if (tasting) {
+      const exp = experienceById(tasting.experienceId)!;
+      return {
+        text: `I'll let Sofia know you're coming to ${exp.name} ${tasting.slot}. She'll walk you through the Ridge pairing after the third course.`,
+        stateChanged: false,
+      };
+    }
+    return {
+      text: "Sofia at Madera handles the Ridge pairing — happy to hold a slot if you want.",
+      stateChanged: false,
+    };
+  }
+
+  // ── Intent: spa ───────────────────────────────────────────────────────
+  if (msg.match(/spa|massage|asaya|relax|tired/)) {
+    const spa = items.find((i) => i.experienceId === "asaya-spa");
+    if (spa) {
+      const exp = experienceById(spa.experienceId)!;
+      return {
+        text: `${exp.name} is held for ${spa.slot}. The room with the cypress view is yours.`,
+        stateChanged: false,
+      };
+    }
+    return {
+      text: "Asaya has openings at 11, 2, and 4 tomorrow. The 4pm tends to be quietest.",
+      stateChanged: false,
+    };
+  }
+
+  // ── Closing acknowledgments — short, no promised mutation ─────────────
+  if (msg.match(/^\s*(thanks|thank you|thx|ty|got it|appreciate)/i)) {
+    return { text: "Anytime.", stateChanged: false };
+  }
+  if (msg.match(/^\s*(yes|yeah|yep|sure|ok|okay|please|sounds good)\b/i)) {
+    return { text: "Of course.", stateChanged: false };
+  }
+
+  // ── Default — generic but reads polite, doesn't promise anything ──────
   return {
-    text: "Of course — give me a moment.",
+    text: "Let me check on that. Anything in particular you'd like me to move first?",
     stateChanged: false,
   };
+}
+
+function shiftedSlot(slot: string): string {
+  // Tiny helper so a "move" always produces a visibly different slot label.
+  const m = slot.match(/^(\w+)\s+(\d{1,2}):?(\d{2})?(am|pm)$/i);
+  if (!m) return slot + " (later)";
+  const day = m[1];
+  let hour = parseInt(m[2], 10);
+  const min = m[3] || "00";
+  const ampm = m[4].toLowerCase();
+  // Shift by 2 hours, simple wrap.
+  hour = ((hour + 2 - 1) % 12) + 1;
+  return `${day} ${hour}:${min}${ampm}`;
 }
 
 export { MOCK as IS_MOCK };
