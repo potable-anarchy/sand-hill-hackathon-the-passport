@@ -33,12 +33,6 @@ export default function EmailDraftsPage() {
     ) ||
     experienceById("madera-tasting")!;
 
-  // Pick a banked experience to re-pitch (or fallback).
-  const bankedExp =
-    experienceById(
-      state.items.find((i) => i.state === "banked")?.experienceId ?? "",
-    ) || experienceById("ridge-rose-reveal")!;
-
   const photoSrc = photo?.url ?? null;
 
   return (
@@ -57,7 +51,7 @@ export default function EmailDraftsPage() {
           <div style={scrollStyle}>
             <h1 style={headlineStyle}>What we'll send</h1>
             <p style={subStyle}>
-              Two drafts. James writes, the front office reviews, the guest
+              One draft. James writes, the front office reviews, the guest
               never sees a template.
             </p>
 
@@ -87,30 +81,14 @@ export default function EmailDraftsPage() {
                 pairing.
               </p>
               <p style={signoffStyle}>— James</p>
-            </EmailDraft>
-
-            <EmailDraft
-              when="Day 90 · Aug 14"
-              from={`James · Rosewood Sand Hill`}
-              subject={`${bankedExp.name} — held for you.`}
-            >
-              <p style={paraStyle}>
-                We saved {bankedExp.name.toLowerCase().replace(/^the /, "")}{" "}
-                for you when {bankedShortAction(bankedExp.id)}.
-              </p>
-              <p style={paraStyle}>
-                It's back this September, here at Sand Hill. I'd hold you a
-                seat where the cypress break the late afternoon light.
-              </p>
-              <p style={paraStyle}>
-                Reply <em>yes</em> and I'll close the calendar with you.
-              </p>
-              <p style={signoffStyle}>— James</p>
+              <a href="/preview/welcome-back" style={ctaStyle}>
+                Plan a return →
+              </a>
             </EmailDraft>
 
             <p style={footerHintStyle}>
-              The rest of the year is quiet. We send a third around your
-              anniversary if there's a reason to.
+              The rest of the year is quiet. We send another only around her
+              anniversary, if there's a reason to.
             </p>
           </div>
         </div>
@@ -118,15 +96,6 @@ export default function EmailDraftsPage() {
       </main>
     </>
   );
-}
-
-function bankedShortAction(expId: string): string {
-  // Tiny tone-tweak so the line doesn't read mechanical.
-  if (expId === "ridge-rose-reveal") return "you took the slower path";
-  if (expId === "cycling-concierge")
-    return "the morning ran longer than the road";
-  if (expId === "asaya-spa") return "the timing didn't land";
-  return "the timing didn't land";
 }
 
 // ─── Email card ─────────────────────────────────────────────────────────────
@@ -271,6 +240,21 @@ const signoffStyle: React.CSSProperties = {
   marginTop: 14,
   fontSize: 13,
   color: "var(--ink-secondary)",
+};
+
+const ctaStyle: React.CSSProperties = {
+  display: "block",
+  marginTop: 20,
+  padding: "12px 14px",
+  background: "var(--ink-primary)",
+  color: "var(--bg-cream)",
+  textAlign: "center",
+  textDecoration: "none",
+  borderRadius: 2,
+  fontSize: 13,
+  fontWeight: 500,
+  letterSpacing: "0.02em",
+  fontFamily: "var(--font-sans)",
 };
 
 const footerHintStyle: React.CSSProperties = {
