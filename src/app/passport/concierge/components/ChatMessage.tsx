@@ -45,7 +45,7 @@ export default function ChatMessage({ message }: Props) {
           }}
         >
           {message.text}
-          <ChatVoiceIcon voiceUrl={message.voiceUrl} />
+          <ChatVoiceIcon text={message.text} voiceUrl={message.voiceUrl} />
         </div>
         {time ? (
           <div
