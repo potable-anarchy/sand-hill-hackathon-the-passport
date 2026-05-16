@@ -101,10 +101,10 @@ export function PassportCard({ item, onRedeem, busy }: Props) {
             }}
           >
             {busy
-              ? "Redeeming…"
+              ? "Saving…"
               : exp.photoRedemptionAppropriate
-                ? "I'm here — post a photo"
-                : "I'm here — redeem"}
+                ? "Capture your experience"
+                : "Redeem"}
           </button>
         </div>
       )}
