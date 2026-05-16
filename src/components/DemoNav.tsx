@@ -148,14 +148,14 @@ const labelStyle: React.CSSProperties = {
 
 const indicatorStyle: React.CSSProperties = {
   position: "fixed",
-  bottom: 24,
+  top: 16,
   left: "50%",
   transform: "translateX(-50%)",
   zIndex: 100,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: 8,
+  gap: 6,
   fontFamily: "Inter, system-ui, -apple-system, sans-serif",
 };
 
