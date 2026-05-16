@@ -66,7 +66,7 @@ export default function DeparturePage() {
 
       <main
         className="min-h-screen w-full flex items-center justify-center p-8"
-        style={{ background: "#e8e4dc" }}
+        style={{ background: "#2b2620" }}
         aria-label={`Departure for ${guestName}`}
       >
         <div className="phone-frame">

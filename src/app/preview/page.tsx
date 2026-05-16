@@ -276,7 +276,7 @@ function Dot({ delay }: { delay: string }) {
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "var(--bg-cream, #FAF7F2)",
+  background: "#2b2620",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

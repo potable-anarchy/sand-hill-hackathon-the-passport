@@ -134,7 +134,7 @@ export default function ConciergePage() {
       <main
         className="min-h-screen w-full flex items-center justify-center p-8"
         style={{
-          background: "#E8E4DC",
+          background: "#2b2620",
           fontFamily: "var(--font-sans)",
           color: "var(--ink-primary)",
         }}

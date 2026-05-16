@@ -135,7 +135,7 @@ function EmailDraft({
 
 const pageStyle: React.CSSProperties = {
   minHeight: "100vh",
-  background: "#E8E4DC",
+  background: "#2b2620",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

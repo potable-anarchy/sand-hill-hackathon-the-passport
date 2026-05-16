@@ -61,7 +61,7 @@ export default function PassportPage() {
       <main
         className="flex min-h-screen w-full flex-1 items-center justify-center p-6"
         style={{
-          background: "#E8E4DC",
+          background: "#2b2620",
           fontFamily: "var(--font-sans, 'Inter', system-ui, sans-serif)",
           color: "var(--ink-primary, #1F1E1A)",
         }}
