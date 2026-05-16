@@ -1,5 +1,11 @@
 # The Passport
 
+[![The Passport — 60-second demo](https://img.youtube.com/vi/EUjgsawZ2Oo/maxresdefault.jpg)](https://youtu.be/EUjgsawZ2Oo)
+
+▶ **[Watch the 60-second demo](https://youtu.be/EUjgsawZ2Oo)**
+
+---
+
 A luxury hospitality CRM where the central artifact is a passport — an itinerary that begins **before** booking, accumulates stamps across activities, holds a conversation with a single AI concierge, and recombines into the right post-stay outreach.
 
 Built today at the **Hospitality 2030 hackathon at Rosewood Sand Hill** (May 16, 2026).
