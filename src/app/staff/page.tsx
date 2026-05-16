@@ -102,17 +102,6 @@ export default function StaffPage() {
               Sat May 16
             </div>
           </div>
-          <div className="flex border border-[var(--color-divider)] rounded-full p-0.5 bg-white">
-            <a
-              href="/passport"
-              className="px-3 py-1 text-xs text-[var(--color-ink-tertiary)] rounded-full"
-            >
-              📱 Guest
-            </a>
-            <span className="px-3 py-1 text-xs bg-[var(--color-ink-primary)] text-[var(--color-bg-cream)] rounded-full">
-              📋 Staff
-            </span>
-          </div>
         </div>
 
         {/* Layout: 2 cols */}
