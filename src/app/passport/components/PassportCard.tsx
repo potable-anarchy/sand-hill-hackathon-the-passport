@@ -66,13 +66,13 @@ export function PassportCard({ item, onRedeem, busy }: Props) {
       </h3>
 
       <div
-        className="mt-1 text-[13px]"
-        style={{ color: "var(--ink-secondary, #5C5953)" }}
+        className="mt-1 text-[12px]"
+        style={{
+          color: "var(--ink-tertiary, #8E8A82)",
+          letterSpacing: "0.02em",
+        }}
       >
-        {exp.description}
-        <span className="ml-1" style={{ color: "var(--ink-tertiary, #8E8A82)" }}>
-          · {exp.location}
-        </span>
+        {exp.location}
       </div>
 
       <div className="mt-3">
@@ -88,7 +88,7 @@ export function PassportCard({ item, onRedeem, busy }: Props) {
         </span>
       </div>
 
-      {isHeldOrUnlocked && !exp.photoRedemptionAppropriate && onRedeem && (
+      {isHeldOrUnlocked && onRedeem && (
         <div className="mt-3">
           <button
             type="button"
@@ -100,7 +100,11 @@ export function PassportCard({ item, onRedeem, busy }: Props) {
               color: "var(--bg-cream, #FAF7F2)",
             }}
           >
-            {busy ? "Redeeming…" : "Redeem"}
+            {busy
+              ? "Redeeming…"
+              : exp.photoRedemptionAppropriate
+                ? "I'm here — post a photo"
+                : "I'm here — redeem"}
           </button>
         </div>
       )}

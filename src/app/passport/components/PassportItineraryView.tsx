@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { PassportItem, PassportState } from "@/lib/types";
 import { experienceById } from "@/lib/property-catalog";
 import { PassportCard } from "./PassportCard";
-import { PhotoAlbumCard } from "./PhotoAlbumCard";
 import { PhotoUploadSheet } from "./PhotoUploadSheet";
 import { StampConfirmation } from "./StampConfirmation";
 
@@ -22,7 +21,7 @@ type ConfirmInfo = {
 export function PassportItineraryView({ initialState }: Props) {
   const [state, setState] = useState<PassportState>(initialState);
   const [busyItemId, setBusyItemId] = useState<string | null>(null);
-  const [photoSheetOpen, setPhotoSheetOpen] = useState(false);
+  const [photoItem, setPhotoItem] = useState<PassportItem | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmInfo, setConfirmInfo] = useState<ConfirmInfo | null>(null);
 
@@ -33,19 +32,11 @@ export function PassportItineraryView({ initialState }: Props) {
     setState(data);
   }, []);
 
-  // Pull fresh state on focus, in case staff feed / other actors mutated it
   useEffect(() => {
     const onFocus = () => refresh();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
-
-  // Pick the first held + photo-redemption-appropriate item for the album card
-  const photoTarget: PassportItem | null =
-    state.items.find((i) => {
-      const exp = experienceById(i.experienceId);
-      return i.state === "held" && exp?.photoRedemptionAppropriate;
-    }) ?? null;
 
   async function redeem(item: PassportItem, photoUrl?: string) {
     setBusyItemId(item.id);
@@ -78,6 +69,15 @@ export function PassportItineraryView({ initialState }: Props) {
     }
   }
 
+  function handleRedeemClick(item: PassportItem) {
+    const exp = experienceById(item.experienceId);
+    if (exp?.photoRedemptionAppropriate) {
+      setPhotoItem(item);
+    } else {
+      redeem(item);
+    }
+  }
+
   async function handlePhotoSubmit({
     itemId,
     photoUrl,
@@ -88,7 +88,7 @@ export function PassportItineraryView({ initialState }: Props) {
     const target = state.items.find((i) => i.id === itemId);
     if (!target) return;
     await redeem(target, photoUrl);
-    setPhotoSheetOpen(false);
+    setPhotoItem(null);
   }
 
   return (
@@ -133,23 +133,16 @@ export function PassportItineraryView({ initialState }: Props) {
           <PassportCard
             key={item.id}
             item={item}
-            onRedeem={(i) => redeem(i)}
+            onRedeem={handleRedeemClick}
             busy={busyItemId === item.id}
           />
         ))}
-
-        {photoTarget && (
-          <PhotoAlbumCard
-            onClick={() => setPhotoSheetOpen(true)}
-            disabled={busyItemId !== null}
-          />
-        )}
       </div>
 
       <PhotoUploadSheet
-        open={photoSheetOpen}
-        targetItem={photoTarget}
-        onClose={() => setPhotoSheetOpen(false)}
+        open={!!photoItem}
+        targetItem={photoItem}
+        onClose={() => setPhotoItem(null)}
         onSubmit={handlePhotoSubmit}
       />
 

@@ -206,19 +206,11 @@ function ItineraryInChat({
           if (!exp) return null;
           return (
             <div key={it.id} style={itineraryItemStyle}>
-              <div style={itinerarySlot}>{it.slot.toUpperCase()}</div>
-              <div style={itineraryName}>{exp.name}</div>
-              <div style={itineraryDesc}>{exp.description}</div>
+              <div style={itineraryRow}>
+                <span style={itinerarySlot}>{it.slot}</span>
+                <span style={itineraryName}>{exp.name}</span>
+              </div>
               <div style={unlockPill}>◇ {exp.unlock}</div>
-              {it.alternates.length > 0 && (
-                <div style={alternatesLine}>
-                  Also held:{" "}
-                  {it.alternates
-                    .map((aid) => experienceById(aid)?.name)
-                    .filter(Boolean)
-                    .join(", ")}
-                </div>
-              )}
             </div>
           );
         })}
@@ -367,24 +359,27 @@ const itineraryItemStyle: React.CSSProperties = {
   borderBottom: "1px solid var(--divider, #E8E4DC)",
 };
 
+const itineraryRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "baseline",
+  gap: 12,
+  marginBottom: 6,
+};
+
 const itinerarySlot: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: "0.08em",
   color: "var(--ink-tertiary, #8E8A82)",
-  marginBottom: 4,
+  textTransform: "uppercase",
+  minWidth: 78,
+  flexShrink: 0,
 };
 
 const itineraryName: React.CSSProperties = {
   fontFamily: "var(--font-serif)",
   fontSize: 17,
   color: "var(--ink-primary, #1F1E1A)",
-  marginBottom: 4,
-};
-
-const itineraryDesc: React.CSSProperties = {
-  fontSize: 13,
-  color: "var(--ink-secondary, #5C5953)",
-  marginBottom: 8,
+  lineHeight: 1.2,
 };
 
 const unlockPill: React.CSSProperties = {
@@ -395,13 +390,7 @@ const unlockPill: React.CSSProperties = {
   padding: "3px 10px",
   borderRadius: 100,
   letterSpacing: "0.02em",
-};
-
-const alternatesLine: React.CSSProperties = {
-  fontSize: 11,
-  color: "var(--ink-tertiary, #8E8A82)",
-  marginTop: 8,
-  fontStyle: "italic",
+  marginLeft: 90,
 };
 
 const bookButtonStyle: React.CSSProperties = {
