@@ -68,11 +68,19 @@ export default function EmailDraftsPage() {
               photoSrc={photoSrc}
               photoAlt={`Your ${attendedExp.name}`}
             >
-              <p style={paraStyle}>
-                The light you caught at {attendedExp.location.toLowerCase()} —
-                Reni asked me when you're back. He's already plating the next
-                tasting.
-              </p>
+              {photoSrc ? (
+                <p style={paraStyle}>
+                  The light you caught at {attendedExp.location.toLowerCase()} —
+                  Reni asked me when you're back. He's already plating the next
+                  tasting.
+                </p>
+              ) : (
+                <p style={paraStyle}>
+                  Reni asked me when you're back. He's already plating the next
+                  tasting — the heirloom carrots from your night are gone, but
+                  his summer corn course is its descendant.
+                </p>
+              )}
               <p style={paraStyle}>
                 His summer menu drops the second week of July. The same corner
                 table is yours if you want it. I'd hold the same Ridge
@@ -147,10 +155,6 @@ function EmailDraft({
       {photoSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={photoSrc} alt={photoAlt || "memory"} style={photoStyle} />
-      ) : photoAlt ? (
-        <div style={photoPlaceholderStyle}>
-          <span>YOUR PHOTO — {photoAlt.toUpperCase()}</span>
-        </div>
       ) : null}
 
       <div style={bodyStyle}>{children}</div>
@@ -251,23 +255,6 @@ const photoStyle: React.CSSProperties = {
   objectFit: "cover",
   borderRadius: 6,
   marginBottom: 14,
-};
-
-const photoPlaceholderStyle: React.CSSProperties = {
-  width: "100%",
-  aspectRatio: "4/5",
-  background:
-    "linear-gradient(135deg, #c9a878 0%, #7d8466 100%)",
-  borderRadius: 6,
-  marginBottom: 14,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "rgba(255,255,255,0.6)",
-  fontSize: 10,
-  letterSpacing: "0.12em",
-  textAlign: "center",
-  padding: 12,
 };
 
 const bodyStyle: React.CSSProperties = {

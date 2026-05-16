@@ -56,10 +56,9 @@ export default function WelcomeBackPage() {
     experienceById("madera-tasting"),
     experienceById("bici-coffee"),
   ].filter((x): x is NonNullable<typeof x> => Boolean(x));
-  const savedFallback = experienceById("ridge-rose-reveal");
 
   const showStamped = stamped.length > 0 ? stamped : lovedFallback.map((exp) => ({ item: null, exp }));
-  const showBanked = banked.length > 0 ? banked : savedFallback ? [savedFallback] : [];
+  const showBanked = banked;
 
   // Something new since their last visit — pick one they haven't seen
   const allIds = new Set(state.items.map((i) => i.experienceId));
