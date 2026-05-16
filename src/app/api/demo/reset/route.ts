@@ -11,8 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { resetState, setState } from "@/lib/state";
-import { generateItinerary } from "@/lib/agent";
-import { structureObservation } from "@/lib/observations";
+import { deterministicItinerary } from "@/lib/tools";
 import type { StaffObservation } from "@/lib/types";
 
 const SEED_PROMPTS = [
@@ -24,36 +23,41 @@ const SEED_PROMPTS = [
 const SEED_OBSERVATION =
   "Marcie mentioned her sister's wedding in Sonoma next May.";
 
+// Pre-structured observation so we don't pay the Claude/Haiku round-trip
+// on every reset. The structured fields match what structureObservation
+// would produce for this exact text.
+const SEED_OBS_STRUCTURED: Record<string, string> = {
+  family_event: "sister's wedding",
+  family_member: "sister",
+  location_mentioned: "Sonoma",
+  date_mentioned: "May",
+  raw: SEED_OBSERVATION,
+};
+
 export async function POST() {
-  // 1. Clear
+  // Use the deterministic itinerary so reset is instant (<100ms) instead
+  // of waiting on the ~8s Claude call. The actual demo flow at /preview
+  // still uses real Claude when the guest types their own answers.
   resetState();
 
-  // 2. Seed itinerary (real Claude call when ANTHROPIC_API_KEY is set,
-  //    deterministic fallback otherwise)
-  const items = await generateItinerary(SEED_PROMPTS);
+  const items = deterministicItinerary(SEED_PROMPTS);
   setState((s) => {
     s.items = items;
     s.guest.statedIntent = SEED_PROMPTS;
     s.guest.name = "Marcie";
-  });
-
-  // 3. Seed staff observation
-  const structured = await structureObservation(SEED_OBSERVATION);
-  const obs: StaffObservation = {
-    id: `obs-${Date.now()}`,
-    text: SEED_OBSERVATION,
-    structured,
-    guestId: "g-demo",
-    staffMember: "Front Desk",
-    capturedAt: new Date().toISOString(),
-  };
-  setState((s) => {
-    s.guest.observations.push(obs);
+    s.guest.observations.push({
+      id: `obs-${Date.now()}`,
+      text: SEED_OBSERVATION,
+      structured: SEED_OBS_STRUCTURED,
+      guestId: "g-demo",
+      staffMember: "Front Desk",
+      capturedAt: new Date().toISOString(),
+    } satisfies StaffObservation);
   });
 
   return NextResponse.json({
     ok: true,
     items: items.length,
-    observation: structured,
+    observation: SEED_OBS_STRUCTURED,
   });
 }
