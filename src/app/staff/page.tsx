@@ -82,9 +82,11 @@ export default function StaffPage() {
 
   if (!state) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg-cream)] flex items-center justify-center">
-        <div className="text-[var(--color-ink-tertiary)]">Loading…</div>
-      </div>
+      <main className="min-h-screen flex items-center justify-center p-6" style={{ background: "#2b2620" }}>
+        <div className="ipad-frame flex items-center justify-center">
+          <div className="text-[var(--color-ink-tertiary)]">Loading…</div>
+        </div>
+      </main>
     );
   }
 
@@ -92,8 +94,12 @@ export default function StaffPage() {
   const observations = state.guest.observations;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-cream)] py-8 px-8">
-      <div className="max-w-5xl mx-auto">
+    <main
+      className="min-h-screen flex items-center justify-center p-6"
+      style={{ background: "#2b2620" }}
+    >
+      <div className="ipad-frame overflow-hidden">
+        <div className="h-full overflow-y-auto bg-[var(--color-bg-cream)] py-8 px-8">
         {/* Header */}
         <div className="flex justify-between items-baseline pb-4 border-b border-[var(--color-divider)] mb-8">
           <div>
@@ -238,8 +244,27 @@ export default function StaffPage() {
             </div>
           </div>
         </div>
+        </div>
       </div>
       <DemoNav />
-    </div>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+.ipad-frame {
+  width: 1180px;
+  height: 820px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
+  background: #FAF7F2;
+  border: 1px solid #8E8A82;
+  border-radius: 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+`,
+        }}
+      />
+    </main>
   );
 }
