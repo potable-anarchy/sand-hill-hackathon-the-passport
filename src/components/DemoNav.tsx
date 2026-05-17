@@ -82,13 +82,13 @@ export default function DemoNav() {
         <span style={labelStyle}>{resetting ? "Resetting…" : "Start new demo"}</span>
       </button>
       {prev && (
-        <Link href={prev.path} style={prevStyle} className="demo-nav-btn">
+        <Link href={prev.path} style={prevStyle} className="demo-nav-btn" prefetch={false}>
           <span style={chevronStyle}>←</span>
           <span style={labelStyle}>{prev.label}</span>
         </Link>
       )}
       {next && (
-        <Link href={next.path} style={nextStyle} className="demo-nav-btn">
+        <Link href={next.path} style={nextStyle} className="demo-nav-btn" prefetch={false}>
           <span style={labelStyle}>{next.label}</span>
           <span style={chevronStyle}>→</span>
         </Link>

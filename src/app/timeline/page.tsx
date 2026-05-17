@@ -2,6 +2,10 @@ import { getState } from "@/lib/state";
 import { experienceById, EXPERIENCES } from "@/lib/property-catalog";
 import DemoNav from "@/components/DemoNav";
 
+// Always re-render with the latest in-memory state — never serve a cached
+// version, otherwise a photo uploaded after navigation prefetch won't show.
+export const dynamic = "force-dynamic";
+
 /**
  * Post-checkout email drafts.
  *
